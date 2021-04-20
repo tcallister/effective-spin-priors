@@ -2,9 +2,35 @@ import numpy as np
 from scipy.special import spence as PL
 
 def Di(z):
+
+    """
+    Wrapper for the scipy implmentation of Spence's function.
+    Note that we adhere to the Mathematica convention as detailed in:
+    https://reference.wolfram.com/language/ref/PolyLog.html
+
+    Inputs
+    z: A (possibly complex) scalar or array
+
+    Returns
+    Array equivalent to PolyLog[2,z], as defined by Mathematica
+    """
+
     return PL(1.-z+0j)
 
 def chi_effective_prior_from_aligned_spins(q,aMax,xs):
+
+    """
+    Function defining the conditional priors p(chi_eff|q) corresponding to
+    uniform, aligned component spin priors.
+
+    Inputs
+    q: Mass ratio value (according to the convention q<1)
+    aMax: Maximum allowed dimensionless component spin magnitude
+    xs: Chi_effective value or values at which we wish to compute prior
+
+    Returns:
+    Array of prior values
+    """
 
     # Ensure that `xs` is an array and take absolute value
     xs = np.reshape(xs,-1)
@@ -28,16 +54,30 @@ def chi_effective_prior_from_aligned_spins(q,aMax,xs):
 
 def chi_effective_prior_from_isotropic_spins(q,aMax,xs):
 
+    """
+    Function defining the conditional priors p(chi_eff|q) corresponding to
+    uniform, isotropic component spin priors.
+
+    Inputs
+    q: Mass ratio value (according to the convention q<1)
+    aMax: Maximum allowed dimensionless component spin magnitude
+    xs: Chi_effective value or values at which we wish to compute prior
+
+    Returns:
+    Array of prior values
+    """
+
     # Ensure that `xs` is an array and take absolute value
     xs = np.reshape(np.abs(xs),-1)
 
     # Set up various piecewise cases
-    pdfs = np.zeros(xs.size,dtype=complex)
-    caseA = (xs<aMax*(1.-q)/(1.+q))*(xs<q*aMax/(1.+q))
-    caseB = (xs<aMax*(1.-q)/(1.+q))*(xs>=q*aMax/(1.+q))
-    caseC = (xs>=aMax*(1.-q)/(1.+q))*(xs<q*aMax/(1.+q))
-    caseD = (xs>=aMax*(1.-q)/(1.+q))*(xs<aMax/(1.+q))*(xs>=q*aMax/(1.+q))
-    caseE = (xs>=aMax*(1.-q)/(1.+q))*(xs>=aMax/(1.+q))*(xs<aMax)
+    pdfs = np.ones(xs.size,dtype=complex)*(-1.)
+    caseZ = (xs==0)
+    caseA = (xs>0)*(xs<aMax*(1.-q)/(1.+q))*(xs<q*aMax/(1.+q))
+    caseB = (xs<aMax*(1.-q)/(1.+q))*(xs>q*aMax/(1.+q))
+    caseC = (xs>aMax*(1.-q)/(1.+q))*(xs<q*aMax/(1.+q))
+    caseD = (xs>aMax*(1.-q)/(1.+q))*(xs<aMax/(1.+q))*(xs>=q*aMax/(1.+q))
+    caseE = (xs>aMax*(1.-q)/(1.+q))*(xs>aMax/(1.+q))*(xs<aMax)
     caseF = (xs>=aMax)
 
     # Select relevant effective spins
@@ -46,6 +86,8 @@ def chi_effective_prior_from_isotropic_spins(q,aMax,xs):
     x_C = xs[caseC]
     x_D = xs[caseD]
     x_E = xs[caseE]
+
+    pdfs[caseZ] = (1.+q)/(2.*aMax)*(2.-np.log(q))
 
     pdfs[caseA] = (1.+q)/(4.*q*aMax**2)*(
                     q*aMax*(4.+2.*np.log(aMax) - np.log(q**2*aMax**2 - (1.+q)**2*x_A**2))
@@ -97,28 +139,30 @@ def chi_effective_prior_from_isotropic_spins(q,aMax,xs):
                     + (1.+q)*x_E*(Di(1.-aMax/((1.+q)*x_E)) - Di(q*aMax/((1.+q)*x_E)))
                     )
 
-    test1 = (
-                2.*(1.+q)*(aMax-x_E)
-                - (1.+q)*x_E*np.log(aMax)**2
-                + np.log(aMax)*(
-                    aMax
-                    -2.*(1.+q)*x_E
-                    -(1.+q)*x_E*np.log(q/((1.+q)*x_E-aMax))
-                    )
-            )
-
-    test2 = (-aMax*np.log(((1.+q)*x_E-aMax)/q)
-                + (1.+q)*x_E*np.log(((1.+q)*x_E-aMax)*((1.+q)*x_E-q*aMax)/q)
-                + (1.+q)*x_E*np.log((1.+q)*x_E)*np.log(q*aMax/((1.+q)*x_E-aMax))
-                - q*aMax*np.log(((1.+q)*x_E-q*aMax)/aMax)
-                + (1.+q)*x_E*(Di(1.-aMax/((1.+q)*x_E)) - Di(q*aMax/((1.+q)*x_E)))
-            )
-
     pdfs[caseF] = 0.
+
+    # Deal with spins on the boundary between cases
+    if np.any(pdfs==-1):
+        boundary = (pdfs==-1)
+        pdfs[boundary] = 0.5*(chi_effective_prior_from_isotropic_spins(q,aMax,xs[boundary]+1e-6)\
+                        + chi_effective_prior_from_isotropic_spins(q,aMax,xs[boundary]-1e-6))
 
     return np.real(pdfs)
 
 def chi_p_prior_from_isotropic_spins(q,aMax,xs):
+
+    """
+    Function defining the conditional priors p(chi_p|q) corresponding to
+    uniform, isotropic component spin priors.
+
+    Inputs
+    q: Mass ratio value (according to the convention q<1)
+    aMax: Maximum allowed dimensionless component spin magnitude
+    xs: Chi_p value or values at which we wish to compute prior
+
+    Returns:
+    Array of prior values
+    """
 
     # Ensure that `xs` is an array and take absolute value
     xs = np.reshape(xs,-1)
@@ -126,7 +170,7 @@ def chi_p_prior_from_isotropic_spins(q,aMax,xs):
     # Set up various piecewise cases
     pdfs = np.zeros(xs.size)
     caseA = xs<q*aMax*(3.+4.*q)/(4.+3.*q)
-    caseB = (xs>q*aMax*(3.+4.*q)/(4.+3.*q))*(xs<aMax)
+    caseB = (xs>=q*aMax*(3.+4.*q)/(4.+3.*q))*(xs<aMax)
 
     # Select relevant effective spins
     x_A = xs[caseA]
@@ -148,8 +192,4 @@ def chi_p_prior_from_isotropic_spins(q,aMax,xs):
     pdfs[caseB] = (1./aMax)*np.arccos(x_B/aMax)
 
     return pdfs
-
-
-
-
 

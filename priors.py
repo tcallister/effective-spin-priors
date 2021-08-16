@@ -273,7 +273,7 @@ def chi_p_prior_given_chi_eff_q(q,aMax,xeff,xp,ndraws=10000,bw_method='scott'):
         max_Xp = np.sqrt(aMax**2 - ((1.+q)*np.abs(xeff)-q)**2.)
 
     # Set up a grid slightly inside (0,max chi_p) and evaluate KDE
-    reference_grid = np.linspace(0.05*max_Xp,0.95*max_Xp,30)
+    reference_grid = np.linspace(0.05*max_Xp,0.95*max_Xp,50)
     reference_vals = prior_kde(reference_grid)
 
     # Manually prepend/append zeros at the boundaries
@@ -282,7 +282,7 @@ def chi_p_prior_given_chi_eff_q(q,aMax,xeff,xp,ndraws=10000,bw_method='scott'):
     norm_constant = np.trapz(reference_vals,reference_grid)
 
     # Interpolate!
-    p_chi_p = np.interp(xp,reference_grid,reference_vals)
+    p_chi_p = np.interp(xp,reference_grid,reference_vals/norm_constant)
     return p_chi_p
 
 def chi_p_from_components(a1,a2,cost1,cost2,q):

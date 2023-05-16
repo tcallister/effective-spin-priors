@@ -47,12 +47,22 @@ def chi_effective_prior_from_aligned_spins(q,aMax,xs):
     x_B = xs[caseB]
     x_C = xs[caseC]
 
+    # Handle vectorized q
+    if np.asarray([q]).size == 1:
+        q_A = q
+        q_B = q
+        q_C = q
+    else:
+        q_A = q[caseA]
+        q_B = q[caseB]
+        q_C = q[caseC]
+
     if np.sum(caseA) > 0:
-        pdfs[caseA] = (1. + q[caseA])**2 * (aMax - x_A) / (4. * q[caseA]*aMax**2)
+        pdfs[caseA] = (1. + q_A)**2 * (aMax - x_A) / (4. * q_A*aMax**2)
     if np.sum(caseB) > 0:
-        pdfs[caseB] = (1. + q[caseB])**2 * (aMax - x_B) / (4. * q[caseB]*aMax**2)
+        pdfs[caseB] = (1. + q_B)**2 * (aMax - x_B) / (4. * q_B*aMax**2)
     if np.sum(caseC) > 0:
-        pdfs[caseC] = (1.+q[caseC])/(2.*aMax)
+        pdfs[caseC] = (1.+q_C)/(2.*aMax)
 
     return pdfs
 
@@ -91,62 +101,78 @@ def chi_effective_prior_from_isotropic_spins(q,aMax,xs):
     x_D = xs[caseD]
     x_E = xs[caseE]
 
+    # Handle vectorized q
+    if np.asarray([q]).size == 1:
+        q_A = q
+        q_B = q
+        q_C = q
+        q_D = q
+        q_E = q
+        q_Z = q
+    else:
+        q_A = q[caseA]
+        q_B = q[caseB]
+        q_C = q[caseC]
+        q_D = q[caseD]
+        q_E = q[caseE]
+        q_Z = q[caseZ]
+
     if len(caseZ) > 0:
-        pdfs[caseZ] = (1.+q[caseZ])/(2.*aMax)*(2.-np.log(q[caseZ]))
+        pdfs[caseZ] = (1.+q_Z)/(2.*aMax)*(2.-np.log(q_Z))
 
     if len(caseA) > 0:
-        pdfs[caseA] = (1.+q[caseA])/(4.*q[caseA]*aMax**2)*(
-                    q[caseA]*aMax*(4.+2.*np.log(aMax) - np.log(q[caseA]**2*aMax**2 - (1.+q[caseA])**2*x_A**2))
-                    - 2.*(1.+q[caseA])*x_A*np.arctanh((1.+q[caseA])*x_A/(q[caseA]*aMax))
-                    + (1.+q[caseA])*x_A*(Di(-q[caseA]*aMax/((1.+q[caseA])*x_A)) - Di(q[caseA]*aMax/((1.+q[caseA])*x_A)))
+        pdfs[caseA] = (1.+q_A)/(4.*q_A*aMax**2)*(
+                    q_A*aMax*(4.+2.*np.log(aMax) - np.log(q_A**2*aMax**2 - (1.+q_A)**2*x_A**2))
+                    - 2.*(1.+q_A)*x_A*np.arctanh((1.+q_A)*x_A/(q_A*aMax))
+                    + (1.+q_A)*x_A*(Di(-q_A*aMax/((1.+q_A)*x_A)) - Di(q_A*aMax/((1.+q_A)*x_A)))
                     )
 
     if len(caseB) > 0:
-        pdfs[caseB] = (1.+q[caseB])/(4.*q[caseB]*aMax**2)*(
-                    4.*q[caseB]*aMax
-                    + 2.*q[caseB]*aMax*np.log(aMax)
-                    - 2.*(1.+q[caseB])*x_B*np.arctanh(q[caseB]*aMax/((1.+q[caseB])*x_B))
-                    - q[caseB]*aMax*np.log((1.+q[caseB])**2*x_B**2 - q[caseB]**2*aMax**2)
-                    + (1.+q[caseB])*x_B*(Di(-q[caseB]*aMax/((1.+q[caseB])*x_B)) - Di(q[caseB]*aMax/((1.+q[caseB])*x_B)))
+        pdfs[caseB] = (1.+q_B)/(4.*q_B*aMax**2)*(
+                    4.*q_B*aMax
+                    + 2.*q_B*aMax*np.log(aMax)
+                    - 2.*(1.+q_B)*x_B*np.arctanh(q_B*aMax/((1.+q_B)*x_B))
+                    - q_B*aMax*np.log((1.+q_B)**2*x_B**2 - q_B**2*aMax**2)
+                    + (1.+q_B)*x_B*(Di(-q_B*aMax/((1.+q_B)*x_B)) - Di(q_B*aMax/((1.+q_B)*x_B)))
                     )
 
     if len(caseC) > 0:
-        pdfs[caseC] = (1.+q[caseC])/(4.*q[caseC]*aMax**2)*(
-                    2.*(1.+q[caseC])*(aMax-x_C)
-                    - (1.+q[caseC])*x_C*np.log(aMax)**2.
-                    + (aMax + (1.+q[caseC])*x_C*np.log((1.+q[caseC])*x_C))*np.log(q[caseC]*aMax/(aMax-(1.+q[caseC])*x_C))
-                    - (1.+q[caseC])*x_C*np.log(aMax)*(2. + np.log(q[caseC]) - np.log(aMax-(1.+q[caseC])*x_C))
-                    + q[caseC]*aMax*np.log(aMax/(q[caseC]*aMax-(1.+q[caseC])*x_C))
-                    + (1.+q[caseC])*x_C*np.log((aMax-(1.+q[caseC])*x_C)*(q[caseC]*aMax-(1.+q[caseC])*x_C)/q[caseC])
-                    + (1.+q[caseC])*x_C*(Di(1.-aMax/((1.+q[caseC])*x_C)) - Di(q[caseC]*aMax/((1.+q[caseC])*x_C)))
+        pdfs[caseC] = (1.+q_C)/(4.*q_C*aMax**2)*(
+                    2.*(1.+q_C)*(aMax-x_C)
+                    - (1.+q_C)*x_C*np.log(aMax)**2.
+                    + (aMax + (1.+q_C)*x_C*np.log((1.+q_C)*x_C))*np.log(q_C*aMax/(aMax-(1.+q_C)*x_C))
+                    - (1.+q_C)*x_C*np.log(aMax)*(2. + np.log(q_C) - np.log(aMax-(1.+q_C)*x_C))
+                    + q_C*aMax*np.log(aMax/(q_C*aMax-(1.+q_C)*x_C))
+                    + (1.+q_C)*x_C*np.log((aMax-(1.+q_C)*x_C)*(q_C*aMax-(1.+q_C)*x_C)/q_C)
+                    + (1.+q_C)*x_C*(Di(1.-aMax/((1.+q_C)*x_C)) - Di(q_C*aMax/((1.+q_C)*x_C)))
                     )
 
     if len(caseD) > 0:
-        pdfs[caseD] = (1.+q[caseD])/(4.*q[caseD]*aMax**2)*(
+        pdfs[caseD] = (1.+q_D)/(4.*q_D*aMax**2)*(
                     -x_D*np.log(aMax)**2
-                    + 2.*(1.+q[caseD])*(aMax-x_D)
-                    + q[caseD]*aMax*np.log(aMax/((1.+q[caseD])*x_D-q[caseD]*aMax))
-                    + aMax*np.log(q[caseD]*aMax/(aMax-(1.+q[caseD])*x_D))
-                    - x_D*np.log(aMax)*(2.*(1.+q[caseD]) - np.log((1.+q[caseD])*x_D) - q[caseD]*np.log((1.+q[caseD])*x_D/aMax))
-                    + (1.+q[caseD])*x_D*np.log((-q[caseD]*aMax+(1.+q[caseD])*x_D)*(aMax-(1.+q[caseD])*x_D)/q[caseD])
-                    + (1.+q[caseD])*x_D*np.log(aMax/((1.+q[caseD])*x_D))*np.log((aMax-(1.+q[caseD])*x_D)/q[caseD])
-                    + (1.+q[caseD])*x_D*(Di(1.-aMax/((1.+q[caseD])*x_D)) - Di(q[caseD]*aMax/((1.+q[caseD])*x_D)))
+                    + 2.*(1.+q_D)*(aMax-x_D)
+                    + q_D*aMax*np.log(aMax/((1.+q_D)*x_D-q_D*aMax))
+                    + aMax*np.log(q_D*aMax/(aMax-(1.+q_D)*x_D))
+                    - x_D*np.log(aMax)*(2.*(1.+q_D) - np.log((1.+q_D)*x_D) - q_D*np.log((1.+q_D)*x_D/aMax))
+                    + (1.+q_D)*x_D*np.log((-q_D*aMax+(1.+q_D)*x_D)*(aMax-(1.+q_D)*x_D)/q_D)
+                    + (1.+q_D)*x_D*np.log(aMax/((1.+q_D)*x_D))*np.log((aMax-(1.+q_D)*x_D)/q_D)
+                    + (1.+q_D)*x_D*(Di(1.-aMax/((1.+q_D)*x_D)) - Di(q_D*aMax/((1.+q_D)*x_D)))
                     )
 
     if len(caseE) > 0:
-        pdfs[caseE] = (1.+q[caseE])/(4.*q[caseE]*aMax**2)*(
-                    2.*(1.+q[caseE])*(aMax-x_E)
-                    - (1.+q[caseE])*x_E*np.log(aMax)**2
+        pdfs[caseE] = (1.+q_E)/(4.*q_E*aMax**2)*(
+                    2.*(1.+q_E)*(aMax-x_E)
+                    - (1.+q_E)*x_E*np.log(aMax)**2
                     + np.log(aMax)*(
                         aMax
-                        -2.*(1.+q[caseE])*x_E
-                        -(1.+q[caseE])*x_E*np.log(q[caseE]/((1.+q[caseE])*x_E-aMax))
+                        -2.*(1.+q_E)*x_E
+                        -(1.+q_E)*x_E*np.log(q_E/((1.+q_E)*x_E-aMax))
                         )
-                    - aMax*np.log(((1.+q[caseE])*x_E-aMax)/q[caseE])
-                    + (1.+q[caseE])*x_E*np.log(((1.+q[caseE])*x_E-aMax)*((1.+q[caseE])*x_E-q[caseE]*aMax)/q[caseE])
-                    + (1.+q[caseE])*x_E*np.log((1.+q[caseE])*x_E)*np.log(q[caseE]*aMax/((1.+q[caseE])*x_E-aMax))
-                    - q[caseE]*aMax*np.log(((1.+q[caseE])*x_E-q[caseE]*aMax)/aMax)
-                    + (1.+q[caseE])*x_E*(Di(1.-aMax/((1.+q[caseE])*x_E)) - Di(q[caseE]*aMax/((1.+q[caseE])*x_E)))
+                    - aMax*np.log(((1.+q_E)*x_E-aMax)/q_E)
+                    + (1.+q_E)*x_E*np.log(((1.+q_E)*x_E-aMax)*((1.+q_E)*x_E-q_E*aMax)/q_E)
+                    + (1.+q_E)*x_E*np.log((1.+q_E)*x_E)*np.log(q_E*aMax/((1.+q_E)*x_E-aMax))
+                    - q_E*aMax*np.log(((1.+q_E)*x_E-q_E*aMax)/aMax)
+                    + (1.+q_E)*x_E*(Di(1.-aMax/((1.+q_E)*x_E)) - Di(q_E*aMax/((1.+q_E)*x_E)))
                     )
 
     if len(caseF) > 0:
@@ -187,17 +213,24 @@ def chi_p_prior_from_isotropic_spins(q,aMax,xs):
     x_A = xs[caseA]
     x_B = xs[caseB]
 
+    # Handle vectorized q
+    if np.asarray([q]).size == 1:
+        q_A = q
+    else:
+        q_A = q[caseA]
+
+
     if np.sum(caseA) > 0:
-        pdfs[caseA] = (1./(aMax**2*q[caseA]))*((4.+3.*q[caseA])/(3.+4.*q[caseA]))*(
-                    np.arccos((4.+3.*q[caseA])*x_A/((3.+4.*q[caseA])*q[caseA]*aMax))*(
+        pdfs[caseA] = (1./(aMax**2*q_A))*((4.+3.*q_A)/(3.+4.*q_A))*(
+                    np.arccos((4.+3.*q_A)*x_A/((3.+4.*q_A)*q_A*aMax))*(
                         aMax
                         - np.sqrt(aMax**2-x_A**2)
                         + x_A*np.arccos(x_A/aMax)
                         )
                     + np.arccos(x_A/aMax)*(
-                        aMax*q[caseA]*(3.+4.*q[caseA])/(4.+3.*q[caseA])
-                        - np.sqrt(aMax**2*q[caseA]**2*((3.+4.*q[caseA])/(4.+3.*q[caseA]))**2 - x_A**2)
-                        + x_A*np.arccos((4.+3.*q[caseA])*x_A/((3.+4.*q[caseA])*aMax*q[caseA]))
+                        aMax*q_A*(3.+4.*q_A)/(4.+3.*q_A)
+                        - np.sqrt(aMax**2*q_A**2*((3.+4.*q_A)/(4.+3.*q_A))**2 - x_A**2)
+                        + x_A*np.arccos((4.+3.*q_A)*x_A/((3.+4.*q_A)*aMax*q_A))
                         )
                     )
                     
